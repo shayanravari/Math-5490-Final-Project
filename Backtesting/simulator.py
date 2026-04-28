@@ -1,5 +1,7 @@
+import os
 import sys
 import time
+import json
 import numpy as np
 import pyqtgraph as pg
 from collections import deque
@@ -9,11 +11,11 @@ from PyQt6.QtGui import QFont
 
 
 class OrderSizeModel:
-    def __init__(self):
-        self.round_numbers =[1, 10, 50, 100, 200, 500]
-        self.round_probs =[0.1, 0.3, 0.2, 0.2, 0.1, 0.1]
-        self.geometric_p = 0.05
-        self.p_round = 0.75
+    def __init__(self, config=None):
+        self.round_numbers = config['round_numbers']
+        self.round_probs = config['round_probs']
+        self.geometric_p = config['geometric_p']
+        self.p_round = config['p_round']
 
     def sample_limit_market_order(self):
         if np.random.rand() < self.p_round:
@@ -771,8 +773,7 @@ class PriceLadderDOM(QMainWindow):
                     bg_color = "#1A4A29" if trade['side'] == 'BUY' else "#4A1A1A"
                 
                 if trade.get('is_agent'):
-                    bg_color = "#5C4A00" 
-                    s_str += " [BOT]" 
+                    bg_color = "#5C4A00"
                 
                 item_t = QTableWidgetItem(t_str)
                 item_p = QTableWidgetItem(p_str)
@@ -888,25 +889,36 @@ class PriceLadderDOM(QMainWindow):
         event.accept()
 
 if __name__ == "__main__":
-    print("Starting LOB...")
+    print("Starting Simulator.")
     
-    def f_Qt(t): return 1.0 
-    mu_base =[0.5, 0.4, 0.8, 0.7, 0.2, 0.1, 0.1, 0.8, 0.7, 0.2, 0.5, 0.4]
+    TARGET_TICKER = "TGT"
+    ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    CONFIG_FILE = os.path.join(ROOT_DIR, "Extracted_Market_Data", TARGET_TICKER, f"{TARGET_TICKER}_config.json")
     
-    alpha_matrix = np.full((12, 12), 0.01)
-    np.fill_diagonal(alpha_matrix, 0.05)
-    gamma_matrix = np.full((12, 12), 1.0)
-    beta_matrix = np.full((12, 12), 1.5)
+    if not os.path.exists(CONFIG_FILE):
+        print(f"{CONFIG_FILE} not found.")
+        sys.exit(1)
+        
+    with open(CONFIG_FILE, 'r') as f:
+        cfg = json.load(f)
+        
+    u_shape_bins = {int(k): v for k, v in cfg['u_shape_bins'].items()}
+    def f_Qt(t_seconds):
+        return u_shape_bins.get(min(int(t_seconds // 1800), 12), 1.0) 
 
-    size_model = OrderSizeModel()
-    lob = SixLevelLOB(tick_size=0.01, initial_price=100.00, size_model=size_model)
-    sim = TwelveDimHawkesSimulator(lob, mu_base, alpha_matrix, gamma_matrix, beta_matrix, f_Qt, beta_spread=1.5)
+    size_model = OrderSizeModel(config=cfg['order_size_model'])
+    lob = SixLevelLOB(tick_size=0.01, initial_price=cfg.get('initial_price', 100.00), size_model=size_model)
+    sim = TwelveDimHawkesSimulator(
+        lob=lob, mu=cfg['mu_base'], alpha=cfg['alpha_matrix'], 
+        gamma=cfg['gamma_matrix'], beta_kernel=cfg['beta_matrix'], 
+        f_Qt_func=f_Qt, beta_spread=1.5
+    )
+    
     env = LOBBacktestEnv(lob, sim, size_model)
-
-    trading_bot = SimpleMarketMaker(order_size=250, action_interval=1.0)
+    trading_bot = SimpleMarketMaker(order_size=250, action_interval=0.1)
 
     app = QApplication(sys.argv)
     window = PriceLadderDOM(env, agent=trading_bot)
-    
+    window.setWindowTitle(f"Trading Simulator - {TARGET_TICKER} Terminal")
     window.show()
     sys.exit(app.exec())
