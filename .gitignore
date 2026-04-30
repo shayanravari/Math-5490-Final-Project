@@ -1,13 +1,5 @@
 TAQ_Market_Data/
 
-Extracted_Market_Data/IBM/IBM_Trades
-Extracted_Market_Data/KO/KO_Trades
-Extracted_Market_Data/TGT/TGT_Trades
-
-Extracted_Market_Data/IBM/IBM_Quotes
-Extracted_Market_Data/KO/KO_Quotes
-Extracted_Market_Data/TGT/TGT_Quotes
-
 Extracted_Market_Data/IBM/IBM_Hawkes_Events.csv
 Extracted_Market_Data/KO/KO_Hawkes_Events.csv
 Extracted_Market_Data/TGT/TGT_Hawkes_Events.csv
