@@ -14,7 +14,7 @@ from collections import deque
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QLabel, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView
 from PyQt6.QtCore import QThread, pyqtSignal, Qt
 from PyQt6.QtGui import QFont
-from Trade_Algorithm import HJBMarketMaker
+from Real_Time_Algorithm_test import HJBMarketMaker
 
 
 class OrderSizeModel:
@@ -542,7 +542,7 @@ class PriceLadderDOM(QMainWindow):
 
         self.init_ui()
 
-        self.sim_thread = SimulationThread(env, agent=agent, playback_speed=1.0, target_fps=60)
+        self.sim_thread = SimulationThread(env, agent=agent, playback_speed=10.0, target_fps=60)
         self.sim_thread.update_signal.connect(self.update_dom)
         self.sim_thread.start()
 
@@ -910,7 +910,7 @@ class PriceLadderDOM(QMainWindow):
 if __name__ == "__main__":
     print("Starting Simulator.")
     
-    TARGET_TICKER = "KO"
+    TARGET_TICKER = "IBM"
     ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     CONFIG_FILE = os.path.join(ROOT_DIR, "Extracted_Market_Data", TARGET_TICKER, f"{TARGET_TICKER}_config.json")
     

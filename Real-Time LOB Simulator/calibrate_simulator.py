@@ -174,7 +174,7 @@ def calibrate_ticker(ticker):
                                 t_values, 
                                 y_values, 
                                 p0=[0.05, 2.0, 1.2],
-                                bounds=([0.0, 0.001, 1.001],[10.0, 100.0, 10.0]),
+                                bounds=([0.0, 0.001, 1.001],[10.0, 100.0, 2.0]),
                                 maxfev=10000
                             )
                             alpha[i, j] = popt[0]
