@@ -390,7 +390,7 @@ def calculate_metrics(pnl_series, total_volume, days_count):
     calmar = annualized_return / max_drawdown if max_drawdown > 0 else 0.0
     
     print("\n" + "="*40)
-    print("      ADVANCED BACKTEST METRICS      ")
+    print("      BACKTEST METRICS      ")
     print("="*40)
     print(f"Total Trading Days : {days_count}")
     print(f"Total Net PnL      : ${total_pnl:.2f}")
@@ -566,33 +566,30 @@ def run_multi_day_backtest(dates_list, quotes_dir, trades_dir, ticker="KO"):
             params['lam_arrival'] = (1 - alpha_obs)*params['lam_arrival'] + alpha_obs*safe_lam
             params['lambda_bar'] = (1 - alpha_obs)*params['lambda_bar'] + alpha_obs*new_est['lambda_bar']
             
-            print("Re-solving HJB PDE with new parameters...")
             opt_z_ask, opt_z_bid, opt_mo = solve_hjb_4d(
                 params['kappa'], params['eta'], params['gamma'], params['lam_arrival'], params['lambda_bar'],
                 float(lot_size), Q_bar, T_horizon, N_t
             )
 
-    if valid_days > 0:
-        calculate_metrics(pd.Series(agg_pnl), total_volume, valid_days)
-        
-        plt.figure(figsize=(14, 7))
-        plt.subplot(2, 1, 1)
-        plt.plot(agg_time, agg_pnl, color='green', linewidth=1.5)
-        plt.title('Multi-Day Walk-Forward Adaptive Market Maker PnL')
-        plt.ylabel('Cumulative PnL ($)')
-        plt.grid(True, alpha=0.3)
-        
-        plt.subplot(2, 1, 2)
-        plt.plot(agg_time, agg_inv, color='orange', linewidth=1)
-        plt.ylabel('Inventory (Shares)')
-        plt.xlabel('Continuous Time (Seconds across days)')
-        plt.axhline(0, color='black', linestyle='--', alpha=0.5)
-        plt.grid(True, alpha=0.3)
-        
-        plt.tight_layout()
-        plt.show()
-    else:
-        print("No valid days were processed.")
+
+    calculate_metrics(pd.Series(agg_pnl), total_volume, valid_days)
+    
+    plt.figure(figsize=(14, 7))
+    plt.subplot(2, 1, 1)
+    plt.plot(agg_time, agg_pnl, color='green', linewidth=1.5)
+    plt.title('Market Maker PnL')
+    plt.ylabel('Cumulative PnL ($)')
+    plt.grid(True, alpha=0.3)
+    
+    plt.subplot(2, 1, 2)
+    plt.plot(agg_time, agg_inv, color='orange', linewidth=1)
+    plt.ylabel('Inventory (Shares)')
+    plt.xlabel('Continuous Time (Seconds across days)')
+    plt.axhline(0, color='black', linestyle='--', alpha=0.5)
+    plt.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == "__main__":
     quotes_directory = r"Extracted_Market_Data\\KO\\KO_Quotes"

@@ -3,20 +3,20 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from collections import deque
 
-dt = 0.0005            # 0.0005 second time step
-steps_per_frame = 70   # Calculate 70ms of data per visual frame update
-window_size = 5000     # Keep the last 2.5 seconds of data on screen
+dt = 0.0005
+steps_per_frame = 70
+window_size = 5000
 
-sigma = 0.01           # Tick size ($0.01)
-theta = 1.0            # Baseline arrival rate of price ticks
-kappa = 15.0           # Mean reversion speed of the imbalance
-xi = 1.0               # Volatility of the continuous order flow noise
+sigma = 0.01
+theta = 1.0
+kappa = 15.0
+xi = 1.0
 
-lambda_plus = 30.0     # Rate of exogenous buy market orders per second
-lambda_minus = 30.0    # Rate of exogenous sell market orders per second
-mean_vol = 100.0       # Mean volume of an incoming order
+lambda_plus = 30.0
+lambda_minus = 30.0
+mean_vol = 100.0
 
-eta = 0.5              # Market impact scaling factor for g(V)
+eta = 0.5
 
 current_t = 0.0
 current_alpha = 0.0

@@ -14,7 +14,6 @@ def solve_hjb_offline(lot_size=100.0):
     N_alpha = 21
     d_alpha = (2 * alpha_max) / (N_alpha - 1)
     
-    # Financial parameters
     kappa = 0.5           
     phi = 0.005           # Inventory penalty
     psi = 0.001           # Terminal penalty
@@ -58,7 +57,7 @@ def solve_hjb_offline(lot_size=100.0):
                 
                 continuous_pde = drift_term - phi * (q**2) + (q * lot_size * sigma * alpha)
                 
-                # --- Ask Side (Sell LO) ---
+                # Ask Side
                 best_H_ask = -1e9
                 best_d_ask = 1
                 best_z_ask = 0
@@ -67,7 +66,6 @@ def solve_hjb_offline(lot_size=100.0):
                     for z in range(0, int(Q_bar + q) + 1):
                         expected_fill_val = 0.0
                         
-                        # Exponentially increasing Queue Depth D
                         if delta == 1:
                             D = max(0.0, 0.5 - 0.2 * alpha)   # 50 shares ahead
                         elif delta == 2:
@@ -75,7 +73,6 @@ def solve_hjb_offline(lot_size=100.0):
                         else:
                             D = max(0.0, 8.0 - 0.2 * alpha)   # 800 shares ahead
                             
-                        # If doing nothing (z=0), force Y=0 but still calc alpha jump
                         if z == 0: D = 9999.0 
                         
                         for k in range(len(V_bins)):
@@ -97,7 +94,7 @@ def solve_hjb_offline(lot_size=100.0):
                             best_d_ask = delta
                             best_z_ask = z
                             
-                # --- Bid Side (Buy LO) ---
+                # Bid Side
                 best_H_bid = -1e9
                 best_d_bid = 1
                 best_z_bid = 0
@@ -136,7 +133,6 @@ def solve_hjb_offline(lot_size=100.0):
                 
                 continuous_pde += best_H_ask + best_H_bid
                 
-                # --- Market Order Obstacle ---
                 M_val = -1e9
                 best_mo_size = 0
                 
@@ -173,19 +169,13 @@ def solve_hjb_offline(lot_size=100.0):
         
     return opt_delta_ask, opt_z_ask, opt_delta_bid, opt_z_bid, opt_mo_size
 
-
-# ==========================================
-# 2. THE AGENT (THE BODY)
-# ==========================================
-
 class HJBMarketMaker:
     def __init__(self, action_interval=0.1, lot_size=100):
         self.action_interval = action_interval
         self.lot_size = lot_size
         
-        print(f"Solving HJBQVI Offline (Lot Size = {self.lot_size})... Please wait.")
+        print(f"Solving HJBQVI Offline (Lot Size = {self.lot_size})")
         self.opt_d_ask, self.opt_z_ask, self.opt_d_bid, self.opt_z_bid, self.opt_mo = solve_hjb_offline(float(self.lot_size))
-        print("HJBQVI Solved! Tables loaded.")
         
         self.last_action_time = 0.0
         self.T = 300.0
@@ -231,7 +221,7 @@ class HJBMarketMaker:
             self.active_bid_price = None
             self.last_inventory = env.inventory
 
-        # --- Hard Cap Emergency Dump ---
+        # Hard Cap Emergency Dump
         max_allowed_shares = self.Q_bar * self.lot_size
         if env.inventory > max_allowed_shares:
             excess = env.inventory - max_allowed_shares
@@ -258,7 +248,7 @@ class HJBMarketMaker:
         inv_lots = int(env.inventory / self.lot_size)
         q_idx = min(2 * self.Q_bar, max(0, inv_lots + self.Q_bar))
 
-        # --- Check PDE Market Order (Emergency) ---
+        # Check PDE Market Order
         mo_decision = self.opt_mo[t_idx, a_idx, q_idx]
         if mo_decision != 0:
             actions.extend([{'type': 'cancel', 'side': 'ask'}, {'type': 'cancel', 'side': 'buy'}])
@@ -267,10 +257,10 @@ class HJBMarketMaker:
             side = 'buy' if mo_decision > 0 else 'sell'
             size_shares = abs(mo_decision) * self.lot_size
             actions.append({'type': 'market', 'side': side, 'size': size_shares})
-            print(f"[{env.current_time:.2f}] PDE EMERGENCY: Firing {side.upper()} MO for {size_shares} shares.")
+            print(f"[{env.current_time:.2f}] Firing {side.upper()} MO for {size_shares} shares.")
             return actions
 
-        # --- Limit Orders with Inside-the-Spread Logic ---
+        # Limit Orders with Inside-the-Spread Logic
         d_ask = self.opt_d_ask[t_idx, a_idx, q_idx]
         z_ask = self.opt_z_ask[t_idx, a_idx, q_idx]
         d_bid = self.opt_d_bid[t_idx, a_idx, q_idx]
@@ -282,12 +272,9 @@ class HJBMarketMaker:
         # Calculate Ask Target
         if z_ask > 0:
             if current_spread > 1:
-                # If spread is wide, step inside! d_ask=1 maps to Ask-1 tick.
                 target_ask_price = round(env.lob.p_ask0 + (d_ask - 2) * tick, 4)
-                # Ensure we don't accidentally cross the bid
                 target_ask_price = max(target_ask_price, round(env.lob.p_bid0 + tick, 4))
             else:
-                # Normal 1-tick spread mapping
                 target_ask_price = round(env.lob.p_ask0 + (d_ask - 1) * tick, 4)
             target_ask_size = z_ask * self.lot_size
         else:
@@ -296,9 +283,7 @@ class HJBMarketMaker:
         # Calculate Bid Target
         if z_bid > 0:
             if current_spread > 1:
-                # If spread is wide, step inside! d_bid=1 maps to Bid+1 tick.
                 target_bid_price = round(env.lob.p_bid0 - (d_bid - 2) * tick, 4)
-                # Ensure we don't accidentally cross the ask
                 target_bid_price = min(target_bid_price, round(env.lob.p_ask0 - tick, 4))
             else:
                 target_bid_price = round(env.lob.p_bid0 - (d_bid - 1) * tick, 4)
@@ -306,7 +291,6 @@ class HJBMarketMaker:
         else:
             target_bid_price, target_bid_size = None, 0
 
-        # --- Smart Cancel/Replace Execution ---
         if (target_ask_price != self.active_ask_price) or (target_ask_size != self.active_ask_size):
             actions.append({'type': 'cancel', 'side': 'ask'})
             if target_ask_size > 0:

@@ -57,13 +57,13 @@ def run_single_day(events_df, date_str):
         t_sec = row.TIME_SEC
         time_to_close = MARKET_CLOSE_SEC - t_sec
         
-        # 0. WARMUP
+        # Don't trade open
         if t_sec < MARKET_OPEN_SEC + WARMUP_SEC:
             if row.EVENT_TYPE == 'TRADE' and row.SIDE != 'UNKNOWN':
                 agent.update_alpha(t_sec, row.SIDE, row.SIZE)
             continue
         
-        # 1. EOD LIQUIDATION
+        # Market Close Liquidation
         if time_to_close < 10.0:
             if inventory > 0: cash += inventory * current_bid
             elif inventory < 0: cash -= abs(inventory) * current_ask
@@ -74,13 +74,12 @@ def run_single_day(events_df, date_str):
             inv_history.append(inventory)
             break  
             
-        # 2. QUOTES & AGENT ACTION
+        # Quotes and Agents Actions
         if row.EVENT_TYPE == 'QUOTE':
             if row.BID != current_bid or row.ASK != current_ask:
                 active_z_bid, active_z_ask = 0, 0
                 
             current_bid, current_ask = row.BID, row.ASK
-            
             mo, z_ask, z_bid = agent.get_action(t_sec, inventory, time_to_close, current_bid, current_ask)
             
             if mo != 0:
@@ -106,7 +105,6 @@ def run_single_day(events_df, date_str):
                 agent.update_alpha(t_sec, trade_side, trade_size)
             
             if trade_side == 'BUY' and trade_price >= current_ask and active_z_ask > 0:
-                # Guaranteed minimum 1 lot fill if hit
                 filled_qty = min(active_z_ask, max(100, int(trade_size * 0.25)))
                 filled_qty = min(filled_qty, MAX_SHARES + inventory) # Capacity check
                 if filled_qty > 0:
@@ -143,16 +141,13 @@ def run_multi_day_backtest(ticker, base_dir):
     cumulative_pnl = 0.0
     daily_pnls, all_minute_returns = [],[]
     
-    print(f"=== Starting Robust HJB Backtest for {ticker} ===")
+    print(f"Starting HJB Backtest for {ticker}")
     
     for q_file in quote_files:
         date_str = os.path.basename(q_file).split('_')[1] 
         t_file = os.path.join(trades_dir, f"{ticker}_{date_str}_trades.csv")
-        
         if not os.path.exists(t_file): continue
-            
         events_df = load_and_prep_taq(q_file, t_file)
-        
         day_pnl, day_returns, t_hist, pnl_hist, inv_hist = run_single_day(events_df, date_str)
 
         plt.figure(figsize=(10, 8))

@@ -28,12 +28,12 @@ def exact_log_likelihood(kappa, eta_plus, eta_minus, theta,
         
         current_alpha *= np.exp(-kappa * dt)
         
-        # 3. Process the Event
-        if e_type == 3: # Mid-price Jump UP
+        # Process the Event
+        if e_type == 3:
             intensity = max(current_alpha, 0.0) + theta
             log_rewards += np.log(intensity)
             
-        elif e_type == 4: # Mid-price Jump DOWN
+        elif e_type == 4:
             intensity = max(-current_alpha, 0.0) + theta
             log_rewards += np.log(intensity)
             
@@ -83,7 +83,7 @@ def calibrate_and_save(events_df, output_file=DEFAULT_JSON_PATH):
     def objective(params):
         kappa, eta_plus, eta_minus, theta = params
         if kappa <= 1e-6 or eta_plus <= 1e-6 or eta_minus <= 1e-6 or theta <= 1e-6:
-            return 1e9 # Enforce strictly positive constraints
+            return 1e9
             
         return exact_log_likelihood(
             kappa, eta_plus, eta_minus, theta,

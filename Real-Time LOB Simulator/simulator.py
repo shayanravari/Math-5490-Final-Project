@@ -755,7 +755,6 @@ class PriceLadderDOM(QMainWindow):
         self.pnl_curve.setData(list(self.time_data), list(self.pnl_data))
         self.pnl_plot.setXRange(sim_time - 10.0, sim_time, padding=0)
 
-        # RESTORED FIX: Object Pooling for Active Orders!
         self.ao_table.setUpdatesEnabled(False)
         for i in range(10):
             if i < len(state['active_orders']):
@@ -835,7 +834,6 @@ class PriceLadderDOM(QMainWindow):
 
         self.current_price_line.setValue(state['mid'])
 
-        # 4. Update DOM Ladder
         new_time_str = self.format_time(sim_time)
         if new_time_str != self.last_time_str:
             self.lbl_time.setText(new_time_str)

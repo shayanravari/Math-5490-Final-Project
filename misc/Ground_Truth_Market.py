@@ -58,7 +58,7 @@ alpha_data = deque([current_alpha], maxlen=window_size)
 S_data = deque([current_S], maxlen=window_size)
 
 fig, (ax0, ax1, ax2) = plt.subplots(3, 1, figsize=(10, 9), sharex=True)
-fig.canvas.manager.set_window_title('Market Microstructure (Pareto Volume)')
+fig.canvas.manager.set_window_title('Pareto Volume')
 
 line_lp, = ax0.plot([], [], color='green', linewidth=1, label=r'Buy Rate ($\lambda^+$)')
 line_lm, = ax0.plot([], [], color='red', linewidth=1, label=r'Sell Rate ($\lambda^-$)')
@@ -96,7 +96,7 @@ def update_simulation(frame):
         current_lambda_plus = max(current_lambda_plus + d_lp, mu_plus)
         current_lambda_minus = max(current_lambda_minus + d_lm, mu_minus)
         
-        # Volume Pareto/Round-Lot function
+        # Volume Pareto
         impact_plus = 0.0
         if dN_plus > 0:
             V_plus = draw_realistic_volumes(dN_plus)

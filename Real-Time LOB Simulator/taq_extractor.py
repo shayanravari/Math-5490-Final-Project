@@ -3,7 +3,6 @@ import os
 import glob
 import multiprocessing as mp
 
-# --- ROBUST FOLDER PATHING ---
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 TAQ_DIR = os.path.join(ROOT_DIR, "TAQ_Market_Data")
 OUT_DIR = os.path.join(ROOT_DIR, "Extracted_Market_Data")
