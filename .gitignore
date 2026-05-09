@@ -1,3 +1,5 @@
+.venv/
+
 TAQ_Market_Data/
 
 Extracted_Market_Data/IBM/IBM_Hawkes_Events.csv
