@@ -1,2 +1,2 @@
-# Math-5490-Final-Project
-Algorithmic Trading Final Project Code
+# Market-Making with Jump Processes
+Stochastic Optimal Control Market-Making Code
